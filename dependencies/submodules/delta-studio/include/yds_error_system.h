@@ -4,6 +4,8 @@
 #include "yds_base.h"
 #include "yds_error_codes.h"
 
+#include <cstdio>
+
 class ysErrorHandler;
 
 class ysErrorSystem : public ysObject {

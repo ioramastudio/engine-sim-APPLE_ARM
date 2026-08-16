@@ -16,6 +16,8 @@
 #include <SDL.h>
 #include <SDL_image.h>
 
+#include <cassert>
+
 #include "../include/yds_file.h"
 #include "../engines/basic/include/safe_string.h" // TODO: move this down into delta
 

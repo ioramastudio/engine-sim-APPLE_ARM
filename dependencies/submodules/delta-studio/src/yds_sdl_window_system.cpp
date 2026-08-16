@@ -64,7 +64,21 @@ void ysSdlWindowSystem::ProcessMessages() {
     while (SDL_PollEvent(&event)) {
         switch (event.type) {
             case SDL_QUIT:
-                // TODO: quit
+                CloseAllWindows();
+                break;
+
+            case SDL_WINDOWEVENT:
+                if (event.window.event == SDL_WINDOWEVENT_CLOSE) {
+                    const int windowCount = GetWindowCount();
+                    for (int i = 0; i < windowCount; ++i) {
+                        auto *window = static_cast<ysSdlWindow *>(GetWindow(i));
+                        if (SDL_GetWindowID(window->m_window) == event.window.windowID) {
+                            window->OnCloseWindow();
+                            CloseWindow(window);
+                            break;
+                        }
+                    }
+                }
                 break;
 
             // Input events

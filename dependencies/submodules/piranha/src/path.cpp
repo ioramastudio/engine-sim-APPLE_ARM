@@ -73,7 +73,7 @@ std::string piranha::Path::getStem() const {
 }
 
 bool piranha::Path::isAbsolute() const {
-    return m_path->is_complete();
+    return m_path->is_absolute();
 }
 
 bool piranha::Path::exists() const {
