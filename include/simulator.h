@@ -64,6 +64,10 @@ class Simulator {
 
         void setSimulationFrequency(int frequency) { m_simulationFrequency = frequency; }
         int getSimulationFrequency() const { return m_simulationFrequency; }
+        void setAudioSampleRate(int sampleRate) { m_audioSampleRate = sampleRate; }
+        int getAudioSampleRate() const { return m_audioSampleRate; }
+        void setExternalRpm(double rpm);
+        void clearExternalRpm() { m_externalRpmEnabled = false; }
 
         void setFluidSimulationSteps(int steps) { m_fluidSimulationSteps = steps; }
         int getFluidSimulationSteps() const { return m_fluidSimulationSteps; }
@@ -121,6 +125,9 @@ class Simulator {
         double m_physicsProcessingTime;
 
         int m_simulationFrequency;
+        int m_audioSampleRate;
+        bool m_externalRpmEnabled;
+        double m_externalAngularVelocity;
         int m_fluidSimulationSteps;
 
         double m_targetSynthesizerLatency;

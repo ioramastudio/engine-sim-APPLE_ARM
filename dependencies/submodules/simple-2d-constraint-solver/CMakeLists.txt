@@ -10,6 +10,7 @@ set(CMAKE_CXX_STANDARD 11)
 # ========================================================
 # GTEST
 
+if (ENGINE_SIM_BUILD_TESTS)
 include(FetchContent)
 FetchContent_Declare(
     googletest
@@ -24,6 +25,7 @@ set_property(TARGET gmock PROPERTY FOLDER "gtest")
 set_property(TARGET gmock_main PROPERTY FOLDER "gtest")
 set_property(TARGET gtest PROPERTY FOLDER "gtest")
 set_property(TARGET gtest_main PROPERTY FOLDER "gtest")
+endif ()
 
 # ========================================================
 
@@ -94,6 +96,7 @@ add_library(simple-2d-constraint-solver STATIC
 
 # GTEST
 
+if (ENGINE_SIM_BUILD_TESTS)
 enable_testing()
 
 add_executable(simple-2d-constraint-solver-test
@@ -120,3 +123,4 @@ target_link_libraries(simple-2d-constraint-solver-test
 
 include(GoogleTest)
 gtest_discover_tests(simple-2d-constraint-solver-test)
+endif ()

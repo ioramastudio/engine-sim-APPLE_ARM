@@ -13,6 +13,7 @@ set(CMAKE_CXX_STANDARD 11)
 # =========================================================
 # gtest
 
+if (ENGINE_SIM_BUILD_TESTS)
 include(FetchContent)
 FetchContent_Declare(
     googletest
@@ -27,6 +28,7 @@ set_property(TARGET gmock PROPERTY FOLDER "gtest")
 set_property(TARGET gmock_main PROPERTY FOLDER "gtest")
 set_property(TARGET gtest PROPERTY FOLDER "gtest")
 set_property(TARGET gtest_main PROPERTY FOLDER "gtest")
+endif ()
 
 # =========================================================
 
@@ -55,6 +57,7 @@ target_link_libraries("${ProjectName}-main"
 
 # gtest
 
+if (ENGINE_SIM_BUILD_TESTS)
 enable_testing()
 
 add_executable("${ProjectName}-test"
@@ -72,3 +75,4 @@ target_link_libraries("${ProjectName}-test"
 
 include(GoogleTest)
 gtest_discover_tests("${ProjectName}-test")
+endif ()

@@ -3,6 +3,8 @@ workspace/
 
 # Build directory
 build/
+build-unity/
+error_log.log
 
 # clangd cache and code completion files
 .cache

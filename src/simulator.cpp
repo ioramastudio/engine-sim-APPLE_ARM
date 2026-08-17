@@ -19,6 +19,9 @@ Simulator::Simulator() {
     m_simulationSpeed = 1.0;
     m_targetSynthesizerLatency = 0.1;
     m_simulationFrequency = 10000;
+    m_audioSampleRate = 44100;
+    m_externalRpmEnabled = false;
+    m_externalAngularVelocity = 0.0;
     m_fluidSimulationSteps = 8;
 
     m_crankConstraints = nullptr;
@@ -46,7 +49,6 @@ Simulator::~Simulator() {
     assert(m_system == nullptr);
     assert(m_exhaustFlowStagingBuffer == nullptr);
     assert(m_delayFilters == nullptr);
-    assert(m_antialiasingFilters == nullptr);
     assert(m_dynoTorqueSamples == nullptr);
 }
 
@@ -394,6 +396,14 @@ bool Simulator::simulateStep() {
     const double timestep = 1.0 / m_simulationFrequency;
     m_system->process(timestep, 1);
 
+    if (m_externalRpmEnabled) {
+        // The gameplay drivetrain is authoritative. Preserve engine-sim's
+        // thermodynamic/cylinder simulation while pinning crank speed to it.
+        for (int i = 0; i < m_engine->getCrankshaftCount(); ++i) {
+            m_engine->getCrankshaft(i)->m_body.v_theta = m_externalAngularVelocity;
+        }
+    }
+
     m_engine->update(timestep);
     m_vehicle->update(timestep);
     m_transmission->update(timestep);
@@ -476,6 +486,12 @@ bool Simulator::simulateStep() {
     return true;
 }
 
+void Simulator::setExternalRpm(double rpm) {
+    m_externalRpmEnabled = true;
+    // Engine models in this project rotate clockwise (negative angular speed).
+    m_externalAngularVelocity = -units::rpm(std::max(0.0, rpm));
+}
+
 double Simulator::getTotalExhaustFlow() const {
     double totalFlow = 0.0;
     for (int i = 0; i < m_engine->getCylinderCount(); ++i) {
@@ -531,9 +547,9 @@ void Simulator::destroy() {
 
 void Simulator::initializeSynthesizer() {
     Synthesizer::Parameters synthParams;
-    synthParams.AudioBufferSize = 44100;
-    synthParams.AudioSampleRate = 44100;
-    synthParams.InputBufferSize = 44100;
+    synthParams.AudioBufferSize = m_audioSampleRate;
+    synthParams.AudioSampleRate = static_cast<float>(m_audioSampleRate);
+    synthParams.InputBufferSize = m_audioSampleRate;
     synthParams.InputChannelCount = m_engine->getExhaustSystemCount();
     synthParams.InputSampleRate = static_cast<float>(m_simulationFrequency);
     m_synthesizer.initialize(synthParams);

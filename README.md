@@ -34,6 +34,31 @@ If these steps are successful, you should be able to run the program from the bu
 
 NOTE: the application currently does not open properly with double-click. You must run it from the command line in the build directory
 
+## Headless Unity plugin (macOS)
+
+Build the native plugin without the graphical application or test dependencies:
+
+```sh
+cmake -S . -B build-unity \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DENGINE_SIM_BUILD_APP=OFF \
+  -DENGINE_SIM_BUILD_TESTS=OFF \
+  -DENGINE_SIM_BUILD_UNITY_PLUGIN=ON
+cmake --build build-unity --target engine-sim-unity -j
+```
+
+The result is `build-unity/libengine_sim_unity.dylib`. Copy it to
+`Assets/Plugins/macOS/` in the Unity project and enable it for Editor and
+Standalone macOS in Unity's plugin inspector. Copy this repository's `assets/`
+and `es/` directories into `Assets/StreamingAssets/`, preserving their names,
+and copy `unity/EngineSimNative.cs` into the Unity project. Add that component
+to a GameObject with an AudioSource.
+
+The native interface is declared in `include/engine_sim_unity.h`. It is a C ABI
+so Unity/Mono and IL2CPP can both call it. The component drives simulation from
+`Update` and fills Unity's audio buffer from `OnAudioFilterRead`; the native
+library does not create a window, graphics context, or audio device.
+
 ---
 The work to get this to run on Metal wouldn't have happened without these forks from phire and bobsayshilol and help from jakelst on the engine-sim discord!
 
@@ -236,4 +261,3 @@ This project was made possible by the generous donations of the following indivi
 |Deppy|Dan Smith|Tyson |Jac Comeau|Itemfinder |
 |Tischer Games|Pedro Henrique|Jonathon Owens|BeenWashedUp|martin wolff|
 |Kurt Houben|||||
-

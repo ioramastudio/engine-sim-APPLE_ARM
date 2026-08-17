@@ -12,6 +12,9 @@ set(BISON_EXECUTABLE /opt/homebrew/Cellar/bison/3.8.2/bin/bison)
 
 option(DTV "Enable video output" OFF)
 option(PIRANHA_ENABLED "Enable scripting input" ON)
+option(ENGINE_SIM_BUILD_APP "Build the graphical engine-sim application" ON)
+option(ENGINE_SIM_BUILD_TESTS "Build engine-sim tests" ON)
+option(ENGINE_SIM_BUILD_UNITY_PLUGIN "Build the headless Unity native plugin" ON)
 cmake_dependent_option(DISCORD_ENABLED "Enable Discord Rich Presence" ON WIN32 OFF)
 
 # Default to compiling as Release in single-configuration generators
@@ -42,22 +45,28 @@ set(CMAKE_CXX_STANDARD 17)
 # ========================================================
 # GTEST
 
-include(FetchContent)
-FetchContent_Declare(
-    googletest
-    URL
-    https://github.com/google/googletest/archive/609281088cfefc76f9d0ce82e1ff6c30cc3591e5.zip
-)
+if (ENGINE_SIM_BUILD_TESTS)
+    include(FetchContent)
+    FetchContent_Declare(
+        googletest
+        URL
+        https://github.com/google/googletest/archive/609281088cfefc76f9d0ce82e1ff6c30cc3591e5.zip
+    )
 
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest)
+    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(googletest)
 
-set_property(TARGET gmock PROPERTY FOLDER "gtest")
-set_property(TARGET gmock_main PROPERTY FOLDER "gtest")
-set_property(TARGET gtest PROPERTY FOLDER "gtest")
-set_property(TARGET gtest_main PROPERTY FOLDER "gtest")
+    set_property(TARGET gmock PROPERTY FOLDER "gtest")
+    set_property(TARGET gmock_main PROPERTY FOLDER "gtest")
+    set_property(TARGET gtest PROPERTY FOLDER "gtest")
+    set_property(TARGET gtest_main PROPERTY FOLDER "gtest")
+endif ()
 
 # ========================================================
+
+# Define dependency targets before linking the core libraries. Otherwise CMake
+# treats their names as raw -l flags when configuring a headless-only build.
+add_subdirectory(dependencies)
 
 add_library(engine-sim STATIC
     # Source files
@@ -149,8 +158,7 @@ add_library(engine-sim STATIC
 
 target_link_libraries(engine-sim
     simple-2d-constraint-solver
-    csv-io
-    delta-basic)
+    csv-io)
 
 target_include_directories(engine-sim
     PUBLIC dependencies/submodules)
@@ -204,6 +212,7 @@ if (PIRANHA_ENABLED)
         piranha)
 endif (PIRANHA_ENABLED)
 
+if (ENGINE_SIM_BUILD_APP)
 add_executable(engine-sim-app WIN32
     # Source files
     src/main.cpp
@@ -286,8 +295,6 @@ endif (PIRANHA_ENABLED)
 target_include_directories(engine-sim-app
     PUBLIC dependencies/submodules)
 
-add_subdirectory(dependencies)
-
 if (DISCORD_ENABLED)
     target_link_libraries(engine-sim-app
         discord
@@ -298,9 +305,29 @@ endif (DISCORD_ENABLED)
 target_link_libraries(engine-sim-app
     engine-sim
 )
+endif ()
+
+if (ENGINE_SIM_BUILD_UNITY_PLUGIN)
+    if (NOT PIRANHA_ENABLED)
+        message(FATAL_ERROR "ENGINE_SIM_BUILD_UNITY_PLUGIN requires PIRANHA_ENABLED")
+    endif ()
+
+    add_library(engine-sim-unity SHARED
+        include/engine_sim_unity.h
+        src/engine_sim_unity.cpp)
+    target_include_directories(engine-sim-unity PUBLIC include)
+    target_link_libraries(engine-sim-unity
+        engine-sim
+        engine-sim-script-interpreter)
+    set_target_properties(engine-sim-unity PROPERTIES
+        OUTPUT_NAME "engine_sim_unity"
+        MACOSX_RPATH ON
+        POSITION_INDEPENDENT_CODE ON)
+endif ()
 
 # GTEST
 
+if (ENGINE_SIM_BUILD_TESTS)
 enable_testing()
 
 add_executable(engine-sim-test
@@ -317,3 +344,4 @@ target_link_libraries(engine-sim-test
 
 include(GoogleTest)
 gtest_discover_tests(engine-sim-test)
+endif ()

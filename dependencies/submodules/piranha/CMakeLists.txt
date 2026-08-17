@@ -11,6 +11,7 @@ set(CMAKE_CXX_STANDARD 17)
 # =========================================================
 # GTEST
 
+if (ENGINE_SIM_BUILD_TESTS)
 include(FetchContent)
 FetchContent_Declare(
     googletest
@@ -24,6 +25,7 @@ set_property(TARGET gmock PROPERTY FOLDER "gtest")
 set_property(TARGET gmock_main PROPERTY FOLDER "gtest")
 set_property(TARGET gtest PROPERTY FOLDER "gtest")
 set_property(TARGET gtest_main PROPERTY FOLDER "gtest")
+endif ()
 
 # =========================================================
 # FLEX BISON
@@ -183,6 +185,7 @@ target_link_libraries(piranha_reference_compiler piranha)
 
 # gtest
 
+if (ENGINE_SIM_BUILD_TESTS)
 enable_testing()
 
 add_executable(piranha_test
@@ -204,4 +207,4 @@ target_link_libraries(piranha_test
 
 include(GoogleTest)
 gtest_discover_tests(piranha_test)
-
+endif ()
