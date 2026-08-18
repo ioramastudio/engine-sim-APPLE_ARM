@@ -15,6 +15,7 @@ option(PIRANHA_ENABLED "Enable scripting input" ON)
 option(ENGINE_SIM_BUILD_APP "Build the graphical engine-sim application" ON)
 option(ENGINE_SIM_BUILD_TESTS "Build engine-sim tests" ON)
 option(ENGINE_SIM_BUILD_UNITY_PLUGIN "Build the headless Unity native plugin" ON)
+option(ENGINE_SIM_BUILD_UNITY_IOS "Build the headless Unity iOS static library" OFF)
 cmake_dependent_option(DISCORD_ENABLED "Enable Discord Rich Presence" ON WIN32 OFF)
 
 # Default to compiling as Release in single-configuration generators
@@ -323,6 +324,52 @@ if (ENGINE_SIM_BUILD_UNITY_PLUGIN)
         OUTPUT_NAME "engine_sim_unity"
         MACOSX_RPATH ON
         POSITION_INDEPENDENT_CODE ON)
+endif ()
+
+if (ENGINE_SIM_BUILD_UNITY_IOS)
+    if (NOT APPLE)
+        message(FATAL_ERROR "ENGINE_SIM_BUILD_UNITY_IOS is only supported with an Apple toolchain")
+    endif ()
+    if (NOT PIRANHA_ENABLED)
+        message(FATAL_ERROR "ENGINE_SIM_BUILD_UNITY_IOS requires PIRANHA_ENABLED")
+    endif ()
+
+    # A static library does not absorb the static libraries it links against.
+    # Build the bridge separately, then combine the complete native dependency
+    # graph into the single archive Unity expects in Assets/Plugins/iOS.
+    add_library(engine-sim-unity-ios-bridge STATIC
+        include/engine_sim_unity.h
+        src/engine_sim_unity.cpp)
+    target_include_directories(engine-sim-unity-ios-bridge PUBLIC include)
+    target_link_libraries(engine-sim-unity-ios-bridge
+        engine-sim
+        engine-sim-script-interpreter)
+    set_target_properties(engine-sim-unity-ios-bridge PROPERTIES
+        OUTPUT_NAME "engine_sim_unity_ios_bridge"
+        POSITION_INDEPENDENT_CODE ON)
+
+    set(ENGINE_SIM_UNITY_IOS_ARCHIVE
+        "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}engine_sim_unity_ios${CMAKE_STATIC_LIBRARY_SUFFIX}")
+    add_custom_command(
+        OUTPUT "${ENGINE_SIM_UNITY_IOS_ARCHIVE}"
+        COMMAND /usr/bin/libtool -static -o "${ENGINE_SIM_UNITY_IOS_ARCHIVE}"
+            $<TARGET_FILE:engine-sim-unity-ios-bridge>
+            $<TARGET_FILE:engine-sim>
+            $<TARGET_FILE:engine-sim-script-interpreter>
+            $<TARGET_FILE:simple-2d-constraint-solver>
+            $<TARGET_FILE:csv-io>
+            $<TARGET_FILE:piranha>
+        DEPENDS
+            engine-sim-unity-ios-bridge
+            engine-sim
+            engine-sim-script-interpreter
+            simple-2d-constraint-solver
+            csv-io
+            piranha
+        COMMENT "Creating self-contained Unity iOS static library"
+        VERBATIM)
+    add_custom_target(engine-sim-unity-ios
+        DEPENDS "${ENGINE_SIM_UNITY_IOS_ARCHIVE}")
 endif ()
 
 # GTEST

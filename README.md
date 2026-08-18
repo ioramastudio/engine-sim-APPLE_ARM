@@ -59,6 +59,29 @@ so Unity/Mono and IL2CPP can both call it. The component drives simulation from
 `Update` and fills Unity's audio buffer from `OnAudioFilterRead`; the native
 library does not create a window, graphics context, or audio device.
 
+## Unity plugin (iOS)
+
+The iOS target produces one self-contained static archive for a Unity device
+build. Configure with the iOS toolchain:
+
+```sh
+cmake -S . -B build-unity-ios -G Xcode \
+  -DCMAKE_SYSTEM_NAME=iOS \
+  -DCMAKE_OSX_SYSROOT=iphoneos \
+  -DCMAKE_OSX_DEPLOYMENT_TARGET=13.0 \
+  -DENGINE_SIM_BUILD_APP=OFF \
+  -DENGINE_SIM_BUILD_TESTS=OFF \
+  -DENGINE_SIM_BUILD_UNITY_PLUGIN=OFF \
+  -DENGINE_SIM_BUILD_UNITY_IOS=ON
+cmake --build build-unity-ios --config Release --target engine-sim-unity-ios
+```
+
+Copy `build-unity-ios/libengine_sim_unity_ios.a` and
+`unity/EngineSimNative.cs` into `Assets/Plugins/iOS/`. The C# declarations use
+`__Internal` on iOS so IL2CPP links the C ABI directly into the player. This
+target builds for physical arm64 devices; build a separate simulator archive if
+you need to run the Unity player in the iOS Simulator.
+
 ---
 The work to get this to run on Metal wouldn't have happened without these forks from phire and bobsayshilol and help from jakelst on the engine-sim discord!
 

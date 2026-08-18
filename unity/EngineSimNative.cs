@@ -7,7 +7,11 @@ using VehiclePhysics;
 [RequireComponent(typeof(AudioSource))]
 public sealed class EngineSimNative : MonoBehaviour
 {
+#if UNITY_IOS && !UNITY_EDITOR
+    private const string Library = "__Internal";
+#else
     private const string Library = "engine_sim_unity";
+#endif
 
     [DllImport(Library)] private static extern IntPtr es_engine_create();
     [DllImport(Library)] private static extern void es_engine_destroy(IntPtr handle);
