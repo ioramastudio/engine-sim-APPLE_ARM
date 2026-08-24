@@ -179,7 +179,7 @@ public node even_fire_v6_90 {
             turbulence_to_flame_speed_ratio: turbulence_to_flame_speed_ratio()
         ),
         throttle_gamma: 2.0, 
-        simulation_frequency: 8400
+        simulation_frequency: 4200
     )
 
     wires wires()
