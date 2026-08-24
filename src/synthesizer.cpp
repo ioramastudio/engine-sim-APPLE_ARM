@@ -283,8 +283,6 @@ int16_t Synthesizer::renderAudio(int inputSample) {
 
     float signal = 0;
     for (int i = 0; i < m_inputChannelCount; ++i) {
-        const float r_0 = 2.0 * ((double)rand() / RAND_MAX) - 1.0;
-
         const float jitteredSample =
             m_filters[i].JitterFilter.fast_f(m_inputChannels[i].TransferBuffer[inputSample]);
 
@@ -295,7 +293,7 @@ int16_t Synthesizer::renderAudio(int inputSample) {
 
         const float noise = 2.0 * ((double)rand() / RAND_MAX) - 1.0;
         const float r =
-            m_filters->AirNoiseLowPass.fast_f(noise);
+            m_filters[i].AirNoiseLowPass.fast_f(noise);
         const float r_mixed =
             airNoise * r + (1 - airNoise);
 
@@ -306,9 +304,10 @@ int16_t Synthesizer::renderAudio(int inputSample) {
             v_in = 0;
         }
 
-        const float v =
-            convAmount * m_filters[i].Convolution.f(v_in)
-            + (1 - convAmount) * v_in;
+        const float v = convAmount == 0.0f
+            ? v_in
+            : convAmount * m_filters[i].Convolution.f(v_in)
+                + (1 - convAmount) * v_in;
 
         signal += v;
     }

@@ -16,6 +16,7 @@ option(ENGINE_SIM_BUILD_APP "Build the graphical engine-sim application" ON)
 option(ENGINE_SIM_BUILD_TESTS "Build engine-sim tests" ON)
 option(ENGINE_SIM_BUILD_UNITY_PLUGIN "Build the headless Unity native plugin" ON)
 option(ENGINE_SIM_BUILD_UNITY_IOS "Build the headless Unity iOS static library" OFF)
+option(ENGINE_SIM_BUILD_BENCHMARKS "Build performance microbenchmarks" OFF)
 cmake_dependent_option(DISCORD_ENABLED "Enable Discord Rich Presence" ON WIN32 OFF)
 
 # Default to compiling as Release in single-configuration generators
@@ -161,8 +162,19 @@ target_link_libraries(engine-sim
     simple-2d-constraint-solver
     csv-io)
 
+if (APPLE)
+    target_link_libraries(engine-sim "-framework Accelerate")
+endif ()
+
 target_include_directories(engine-sim
     PUBLIC dependencies/submodules)
+
+if (ENGINE_SIM_BUILD_BENCHMARKS)
+    add_executable(engine-sim-convolution-benchmark
+        tools/benchmark_convolution.cpp)
+    target_include_directories(engine-sim-convolution-benchmark PRIVATE include)
+    target_link_libraries(engine-sim-convolution-benchmark engine-sim)
+endif ()
 
 if (PIRANHA_ENABLED)
     add_library(engine-sim-script-interpreter STATIC
@@ -305,6 +317,7 @@ endif (DISCORD_ENABLED)
 
 target_link_libraries(engine-sim-app
     engine-sim
+    delta-basic
 )
 endif ()
 
@@ -352,13 +365,14 @@ if (ENGINE_SIM_BUILD_UNITY_IOS)
         "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}engine_sim_unity_ios${CMAKE_STATIC_LIBRARY_SUFFIX}")
     add_custom_command(
         OUTPUT "${ENGINE_SIM_UNITY_IOS_ARCHIVE}"
-        COMMAND /usr/bin/libtool -static -o "${ENGINE_SIM_UNITY_IOS_ARCHIVE}"
-            $<TARGET_FILE:engine-sim-unity-ios-bridge>
-            $<TARGET_FILE:engine-sim>
-            $<TARGET_FILE:engine-sim-script-interpreter>
-            $<TARGET_FILE:simple-2d-constraint-solver>
-            $<TARGET_FILE:csv-io>
-            $<TARGET_FILE:piranha>
+        # With the Xcode generator, TARGET_FILE paths contain the build-time
+        # EFFECTIVE_PLATFORM_NAME variable. CMake 4 escapes that variable in
+        # custom build phases, leaving a literal ${EFFECTIVE_PLATFORM_NAME} in
+        # the path. Resolve the Xcode environment in a CMake script instead.
+        COMMAND "${CMAKE_COMMAND}"
+            -DENGINE_SIM_BINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
+            -DENGINE_SIM_UNITY_IOS_ARCHIVE=${ENGINE_SIM_UNITY_IOS_ARCHIVE}
+            -P "${CMAKE_CURRENT_SOURCE_DIR}/cmake/create_unity_ios_archive.cmake"
         DEPENDS
             engine-sim-unity-ios-bridge
             engine-sim
@@ -379,6 +393,7 @@ enable_testing()
 
 add_executable(engine-sim-test
     # Source files
+    test/convolution_filter_tests.cpp
     test/gas_system_tests.cpp
     test/function_test.cpp
     test/synthesizer_tests.cpp
