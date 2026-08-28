@@ -44,6 +44,20 @@ project(engine-sim)
 
 set(CMAKE_CXX_STANDARD 17)
 
+# Keep Release builds optimized across all generators. In particular, the
+# Xcode/iOS generator otherwise leaves GCC_OPTIMIZATION_LEVEL at 0 in this
+# project even when --config Release is selected.
+set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG" CACHE STRING "Release C flags" FORCE)
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG" CACHE STRING "Release C++ flags" FORCE)
+
+include(CheckIPOSupported)
+check_ipo_supported(RESULT ENGINE_SIM_IPO_SUPPORTED OUTPUT ENGINE_SIM_IPO_ERROR)
+if (ENGINE_SIM_IPO_SUPPORTED)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
+else ()
+    message(WARNING "Release LTO is unavailable: ${ENGINE_SIM_IPO_ERROR}")
+endif ()
+
 # ========================================================
 # GTEST
 
