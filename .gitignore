@@ -5,6 +5,7 @@ workspace/
 build/
 build-unity/
 build-unity-ios*/
+build-unity-android*/
 error_log.log
 
 # clangd cache and code completion files

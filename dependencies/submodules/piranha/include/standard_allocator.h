@@ -41,9 +41,16 @@ namespace piranha {
             else {
 #ifdef _MSC_VER
                 void *buffer = _aligned_malloc(alignment, sizeof(t_alloc) * n);
+#elif defined(__ANDROID__) && __ANDROID_API__ < 28
+                void *buffer = nullptr;
+                if (posix_memalign(&buffer, alignment, sizeof(t_alloc) * n) != 0) {
+                    buffer = nullptr;
+                }
 #else
                 void *buffer = aligned_alloc(alignment, sizeof(t_alloc) * n);
 #endif
+
+                if (buffer == nullptr) throw std::bad_alloc();
                 
                 if (n == 1) {
                     newObject = TRACK(new (buffer) t_alloc);
